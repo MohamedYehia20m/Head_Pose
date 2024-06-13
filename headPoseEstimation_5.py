@@ -5,9 +5,9 @@ import numpy as np
 mp_face_mesh = mp.solutions.face_mesh
 face_mesh = mp_face_mesh.FaceMesh(min_detection_confidence=0.5, min_tracking_confidence=0.5)
 
-mp_drawing = mp.solutions.drawing_utils
+#mp_drawing = mp.solutions.drawing_utils
 
-drawing_spec = mp_drawing.DrawingSpec(thickness=1, circle_radius=1)
+#drawing_spec = mp_drawing.DrawingSpec(thickness=1, circle_radius=1)
 
 
 def distance(p1, p2):
@@ -138,32 +138,40 @@ while True:
         left_eye_landmarks = [face_landmarks.landmark[i] for i in left_eye_indices]
         left_eye_landmarks_2d = np.array([(lm.x * img_w, lm.y * img_h) for lm in left_eye_landmarks])
         left_ear = calculate_ear(left_eye_landmarks_2d)
-        if left_ear is not None:
-            cv2.putText(frame, f'left_EAR: {left_ear:.2f}', (20, 25), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        #if left_ear is not None:
+        #    cv2.putText(frame, f'left_EAR: {left_ear:.2f}', (20, 25), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
 
         right_eye_landmarks = [face_landmarks.landmark[i] for i in right_eye_indices]
         right_eye_landmarks_2d = np.array([(lm.x * img_w, lm.y * img_h) for lm in right_eye_landmarks])
         right_ear = calculate_ear(right_eye_landmarks_2d)
-        if right_ear is not None:
-            cv2.putText(frame, f'right_EAR: {right_ear:.2f}', (20, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        #if right_ear is not None:
+        #    cv2.putText(frame, f'right_EAR: {right_ear:.2f}', (20, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
 
         avg_ear = (left_ear + right_ear) / 2
-        if avg_ear is not None:
-            cv2.putText(frame, f'Avg EAR: {avg_ear:.2f}', (20, 175), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        #if avg_ear is not None:
+        #    cv2.putText(frame, f'Avg EAR: {avg_ear:.2f}', (20, 175), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
 
         inner_mouth_landmarks = [face_landmarks.landmark[i] for i in inner_mouth_indices]
         inner_mouth_landmarks_2d = np.array([(lm.x * img_w, lm.y * img_h) for lm in inner_mouth_landmarks])
         yar = calculate_yawn_aspect_ratio(inner_mouth_landmarks_2d)
-        if yar is not None:
-            cv2.putText(frame, f'YAR: {yar:.2f}', (20, 250), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        #if yar is not None:
+            #cv2.putText(frame, f'YAR: {yar:.2f}', (20, 250), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
 
+        ###threshold for yawn detection
+        if yar > 0.25:
+            cv2.putText(frame, "Yawn Detected", (20, 300), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+
+        ###threshold for drowsiness detection
+        if avg_ear < 0.25:
+            cv2.putText(frame, "Drowsiness Detected", (20, 350), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        '''
         mp_drawing.draw_landmarks(
             image=frame,
             landmark_list=face_landmarks,
             connections=mp_face_mesh.FACEMESH_CONTOURS,
             landmark_drawing_spec=drawing_spec,
             connection_drawing_spec=drawing_spec)
-
+        '''
     cv2.imshow('Head Pose Estimation', frame)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
