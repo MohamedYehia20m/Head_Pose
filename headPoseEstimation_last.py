@@ -21,16 +21,18 @@ not_looking_forward_start_time = None
 # Initialize driver state
 driver_state = 0
 
+
 def distance(p1, p2):
-    ''' Calculate distance between two points
+    """ Calculate distance between two points
     :param p1: First Point
     :param p2: Second Point
     :return: Euclidean distance between the points. (Using only the x and y coordinates).
-    '''
+    """
     return np.linalg.norm(np.array(p1[:2]) - np.array(p2[:2]))
 
+
 def calculate_ear(eye_landmarks):
-    if len(eye_landmarks) < 2:
+    if len(eye_landmarks) < 8:
         return None
 
     # Calculate vertical distances
@@ -46,11 +48,13 @@ def calculate_ear(eye_landmarks):
 
     return ear
 
+
 right_eye_indices = [33, 160, 159, 158, 133, 153, 145, 144]
 left_eye_indices = [263, 387, 386, 385, 362, 380, 374, 373]
 
+
 def calculate_yawn_aspect_ratio(inner_mouth_landmarks):
-    if len(inner_mouth_landmarks) < 2:
+    if len(inner_mouth_landmarks) < 4:
         return None
 
     # Calculate width (distance between landmarks 292 and 62)
@@ -63,6 +67,7 @@ def calculate_yawn_aspect_ratio(inner_mouth_landmarks):
     yar = height / width
 
     return yar
+
 
 inner_mouth_indices = [62, 12, 292, 15]
 
@@ -88,6 +93,14 @@ while True:
     if results.multi_face_landmarks:
         for face_landmarks in results.multi_face_landmarks:
             for idx, lm in enumerate(face_landmarks.landmark):
+                '''
+                33: Left eye outer corner
+                263: Right eye outer corner
+                1: Nose tip
+                61: Left mouth corner
+                291: Right mouth corner
+                199: Chin
+                '''
                 if idx == 33 or idx == 263 or idx == 1 or idx == 61 or idx == 291 or idx == 199:
                     if idx == 1:
                         nose_2d = (lm.x * img_w, lm.y * img_h)
@@ -109,17 +122,28 @@ while True:
                                [0, focal_length, img_w / 2],
                                [0, 0, 1]])
         dist_matrix = np.zeros((4, 1), dtype=np.float64)
-
+        '''
+        cv2.solvePnP: Solves the Perspective-n-Point problem to find the rotation and translation vectors that map
+        3D points (face_3d) to their corresponding 2D projections (face_2d) given the camera matrix and distortion
+        coefficients.
+        success: Boolean indicating if the function was successful.
+        rot_vec: Rotation vector (Rodrigues vector) representing the rotation of the face.
+        trans_vec: Translation vector representing the translation of the face.
+        '''
         success, rot_vec, trans_vec = cv2.solvePnP(face_3d, face_2d, cam_matrix, dist_matrix)
 
+        # Convert Rotation Vector to Rotation Matrix
         rmat, jac = cv2.Rodrigues(rot_vec)
+
+        # Convert Rotation Matrix to Euler Angles
         angles, mtxR, mtxQ, Qx, Qy, Qz = cv2.RQDecomp3x3(rmat)
 
+        # Convert angles from radians to degrees
         x = angles[0] * 360
         y = angles[1] * 360
         z = angles[2] * 360
 
-        if y < -10 or y > 10 or x < -7 or x > 10:
+        if y < -10 or y > 10 or x < -10 or x > 10:
             text = "Not Looking Forward"
             if not not_looking_forward_start_time:
                 not_looking_forward_start_time = time.time()
@@ -127,12 +151,17 @@ while True:
             text = "Looking Forward"
             not_looking_forward_start_time = None
 
+        '''
+        - Project the 3D points of the nose to the 2D image plane
+        nose_3d_projection: The 2D coordinates of the projected nose tip on the image plane.
+        jacobian: The Jacobian matrix of partial derivatives of the 2D projected points with respect to the parameters.
+        '''
         nose_3d_projection, jacobian = cv2.projectPoints(nose_3d, rot_vec, trans_vec, cam_matrix, dist_matrix)
 
-        p1 = (int(nose_2d[0]), int(nose_2d[1]))
-        p2 = (int(nose_2d[0] + y * 10), int(nose_2d[1] - x * 10))
+        # p1 = (int(nose_2d[0]), int(nose_2d[1]))
+        # p2 = (int(nose_2d[0] + y * 10), int(nose_2d[1] - x * 10))
 
-        #cv2.line(frame, p1, p2, (255, 0, 0), 3)
+        # cv2.line(frame, p1, p2, (255, 0, 0), 3)
 
         cv2.putText(frame, text, (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
 
@@ -146,27 +175,27 @@ while True:
 
         avg_ear = (left_ear + right_ear) / 2
         if avg_ear is not None:
-            cv2.putText(frame, f'Avg EAR: {avg_ear:.2f}', (20, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+            cv2.putText(frame, f'Avg EAR: {avg_ear: .2f}', (20, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
 
         inner_mouth_landmarks = [face_landmarks.landmark[i] for i in inner_mouth_indices]
         inner_mouth_landmarks_2d = np.array([(lm.x * img_w, lm.y * img_h) for lm in inner_mouth_landmarks])
         yar = calculate_yawn_aspect_ratio(inner_mouth_landmarks_2d)
         if yar is not None:
-            cv2.putText(frame, f'YAR: {yar:.2f}', (20, 150), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+            cv2.putText(frame, f'YAR: {yar: .2f}', (20, 150), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
         
         box_color = (0, 255, 0)  # Default color: Green
         
         # Detect drowsiness based on EAR
         if avg_ear < ear_threshold:
             driver_state = 1  # Drowsy
-            #cv2.putText(frame, "Drowsiness Detected", (20, 300), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-            #box_color = (0, 255, 255)  # Red color if any condition is met
+            # cv2.putText(frame, "Drowsiness Detected", (20, 300), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+            # box_color = (0, 255, 255)  # Red color if any condition is met
             if not drowsy_start_time:
                 drowsy_start_time = time.time()
             elif time.time() - drowsy_start_time > drowsy_time_threshold:
                 driver_state = 2  # Sleeping
-                #cv2.putText(frame, "Sleeping Detected!", (20, 350), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-                #box_color = (0, 0, 255)  # Red color if any condition is met
+                # cv2.putText(frame, "Sleeping Detected!", (20, 350), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+                # box_color = (0, 0, 255)  # Red color if any condition is met
             if driver_state == 1:
                 cv2.putText(frame, "Drowsiness Detected", (20, 300), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
                 box_color = (0, 255, 255)
@@ -177,7 +206,6 @@ while True:
             drowsy_start_time = None
         
         # Detect sleeping based on looking forward
-        
 
         # Detect drowsiness based on YAR
         if yar > yar_threshold:
@@ -212,7 +240,7 @@ while True:
 
         # Draw the bounding box around the face
         top_left = (x_min-padding, y_min-padding)
-        bottom_right = (x_max+ padding, y_max+ padding)
+        bottom_right = (x_max + padding, y_max + padding)
 
         # Draw the box around the face
         cv2.rectangle(frame, top_left, bottom_right, box_color, 2)
