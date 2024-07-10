@@ -87,9 +87,15 @@ while True:
     # Convert the color space from BGR to RGB
     image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-    # Get the result
+    # Get the results from the face mesh model using the RGB image as input and store it in the results variable
     results = face_mesh.process(image_rgb)
 
+    # results.multi_face_landmarks contains the landmarks of all the faces detected in the image
+    # Each face_landmarks object contains the landmarks of a single face
+    # Each landmark object contains the x, y, and z coordinates of the landmark
+    # The x and y coordinates are normalized to the image width and height
+    # The z coordinate is the depth of the landmark from the camera
+    # The landmarks are stored in the face_landmarks.landmark object
     if results.multi_face_landmarks:
         for face_landmarks in results.multi_face_landmarks:
             for idx, lm in enumerate(face_landmarks.landmark):
@@ -114,13 +120,45 @@ while True:
                     # Get the 3D Coordinates
                     face_3d.append([x, y, lm.z])
 
+    # If face_3d and face_2d are not empty, then we have detected a face
+    # We can use the 3D and 2D coordinates to estimate the head pose
+    # We can also use the 2D coordinates to draw the landmarks on the image
+    # We can also use the 3D coordinates to draw the bounding box around the face
+    # We can also use the 3D coordinates to calculate the head pose angles
+    # We can also use the 3D coordinates to calculate the eye aspect ratio
+    # We can also use the 2D coordinates to calculate the yawn aspect ratio
+    # We can also use the 2D coordinates to calculate if the driver is looking forward
+    # We can also use the 2D coordinates to calculate if the driver is sleeping
+    # We can also use the 2D coordinates to calculate if the driver is yawning
+    # We can also use the 2D coordinates to calculate if the driver is drowsy
+
         face_2d = np.array(face_2d, dtype=np.float64)
         face_3d = np.array(face_3d, dtype=np.float64)
+        # Camera Matrix
+        # The camera matrix is a 3x3 matrix that contains the intrinsic parameters of the camera
+        # The intrinsic parameters include the focal length, the optical center, and the skew coefficient
+        # The camera matrix is used to project the 3D points of the face to the 2D image plane
+        # The camera matrix is used to solve the Perspective-n-Point problem
+        # The camera matrix is used to find the rotation and translation vectors that map the 3D points to their 2D projections
 
         focal_length = 1 * img_w
         cam_matrix = np.array([[focal_length, 0, img_h / 2],
                                [0, focal_length, img_w / 2],
                                [0, 0, 1]])
+        # Distortion Coefficients
+        # The distortion coefficients are used to correct the radial and tangential lens distortions
+        # The distortion coefficients are used to undistort the image
+        # The distortion coefficients are used to correct the image for lens distortion
+        # The distortion coefficients are used to correct the image for radial and tangential distortions
+        # The distortion coefficients are used to correct the image for barrel and pincushion distortions
+        # The distortion coefficients are used to correct the image for wide-angle distortions
+        # The distortion coefficients are used to correct the image for fisheye distortions
+        # The distortion coefficients are used to correct the image for chromatic aberrations
+        # The distortion coefficients are used to correct the image for color fringing
+        # The distortion coefficients are used to correct the image for color bleeding
+        # The distortion coefficients are used to correct the image for color distortion
+        # The distortion coefficients are used to correct the image for color aberrations
+
         dist_matrix = np.zeros((4, 1), dtype=np.float64)
         '''
         cv2.solvePnP: Solves the Perspective-n-Point problem to find the rotation and translation vectors that map
