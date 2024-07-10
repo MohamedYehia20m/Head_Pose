@@ -194,7 +194,7 @@ while True:
         nose_3d_projection: The 2D coordinates of the projected nose tip on the image plane.
         jacobian: The Jacobian matrix of partial derivatives of the 2D projected points with respect to the parameters.
         '''
-        nose_3d_projection, jacobian = cv2.projectPoints(nose_3d, rot_vec, trans_vec, cam_matrix, dist_matrix)
+        # nose_3d_projection, jacobian = cv2.projectPoints(nose_3d, rot_vec, trans_vec, cam_matrix, dist_matrix)
 
         # p1 = (int(nose_2d[0]), int(nose_2d[1]))
         # p2 = (int(nose_2d[0] + y * 10), int(nose_2d[1] - x * 10))
