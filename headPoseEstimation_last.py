@@ -168,12 +168,28 @@ while True:
         rot_vec: Rotation vector (Rodrigues vector) representing the rotation of the face.
         trans_vec: Translation vector representing the translation of the face.
         '''
+        # Solve the Perspective-n-Point problem to find the rotation and translation vectors
+        # that map the 3D points of the face to their 2D projections
         success, rot_vec, trans_vec = cv2.solvePnP(face_3d, face_2d, cam_matrix, dist_matrix)
 
         # Convert Rotation Vector to Rotation Matrix
+        # The rotation matrix represents the rotation of the face in the 3D space
+        # The rotation matrix is a 3x3 matrix that contains the rotation of the face
         rmat, jac = cv2.Rodrigues(rot_vec)
 
         # Convert Rotation Matrix to Euler Angles
+        # The Euler angles represent the rotation of the face in the 3D space
+        # The Euler angles are represented in radians
+        # The Euler angles are represented in the order Z, Y, X (Yaw, Pitch, Roll)
+        '''
+        cv2.RQDecomp3x3: Decomposes the rotation matrix into the Euler angles.
+        angles: Euler angles representing the rotation of the face.
+        mtxR: The decomposed rotation matrix.
+        mtxQ: The decomposed matrix.
+        Qx: The x-axis of the decomposed matrix.
+        Qy: The y-axis of the decomposed matrix.
+        Qz: The z-axis of the decomposed matrix.
+        '''
         angles, mtxR, mtxQ, Qx, Qy, Qz = cv2.RQDecomp3x3(rmat)
 
         # Convert angles from radians to degrees
