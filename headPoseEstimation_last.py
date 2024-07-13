@@ -108,10 +108,11 @@ while True:
                 199: Chin
                 '''
                 if idx == 33 or idx == 263 or idx == 1 or idx == 61 or idx == 291 or idx == 199:
+                    '''
                     if idx == 1:
                         nose_2d = (lm.x * img_w, lm.y * img_h)
                         nose_3d = (lm.x * img_w, lm.y * img_h, lm.z * 3000)
-
+                    '''
                     x, y = int(lm.x * img_w), int(lm.y * img_h)
 
                     # Get the 2D Coordinates
@@ -170,6 +171,14 @@ while True:
         '''
         # Solve the Perspective-n-Point problem to find the rotation and translation vectors
         # that map the 3D points of the face to their 2D projections
+        '''
+        cv2.solvePnP: Solves the Perspective-n-Point problem to find the rotation and translation vectors that map
+        3D points (face_3d) to their corresponding 2D projections (face_2d) given the camera matrix and distortion
+        coefficients.
+        success: Boolean indicating if the function was successful.
+        rot_vec: Rotation vector (Rodrigues vector) representing the rotation of the face.
+        trans_vec: Translation vector representing the translation of the face.
+        '''
         success, rot_vec, trans_vec = cv2.solvePnP(face_3d, face_2d, cam_matrix, dist_matrix)
 
         # Convert Rotation Vector to Rotation Matrix
